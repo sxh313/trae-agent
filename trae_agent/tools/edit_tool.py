@@ -24,6 +24,30 @@ EditToolSubCommands = [
 SNIPPET_LINES: int = 4
 
 
+def detect_newline(path: Path) -> str | None:
+    """Return the line terminator a file already uses, or None if there is nothing to preserve.
+
+    Reading translates every terminator to "\\n", so writing back without telling the file
+    handle otherwise re-translates them with ``os.linesep`` and rewrites every line the edit
+    did not touch. A file that mixes terminators keeps its most common one; a file that does
+    not exist yet (``create``) returns None, leaving Python's default translation in place.
+    """
+    try:
+        raw = path.read_bytes()
+    except OSError:
+        return None
+
+    crlf = raw.count(b"\r\n")
+    lf = raw.count(b"\n") - crlf
+    cr = raw.count(b"\r") - crlf
+
+    if crlf == lf == cr == 0:
+        return "\n"
+    if crlf >= lf and crlf >= cr:
+        return "\r\n"
+    return "\r" if cr > lf else "\n"
+
+
 class TextEditorTool(Tool):
     """Tool to replace a string in a file."""
 
@@ -285,7 +309,7 @@ Notes for using the `str_replace` command:
     def write_file(self, path: Path, file: str):
         """Write the content of a file to a given path; raise a ToolError if an error occurs."""
         try:
-            _ = path.write_text(file)
+            _ = path.write_text(file, newline=detect_newline(path))
         except Exception as e:
             raise ToolError(f"Ran into {e} while trying to write to {path}") from None
 
