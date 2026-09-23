@@ -12,7 +12,7 @@ from typing import override
 from trae_agent.agent.agent_basics import AgentError, AgentExecution
 from trae_agent.agent.base_agent import BaseAgent
 from trae_agent.prompt.agent_prompt import TRAE_AGENT_SYSTEM_PROMPT
-from trae_agent.tools import tools_registry
+from trae_agent.tools import get_tool_class
 from trae_agent.tools.base import Tool, ToolResult
 from trae_agent.utils.config import MCPServerConfig, TraeAgentConfig
 from trae_agent.utils.llm_clients.llm_basics import LLMMessage, LLMResponse
@@ -115,7 +115,7 @@ class TraeAgent(BaseAgent):
             # Get the model provider from the LLM client
             provider = self._model_config.model_provider.provider
             self._tools: list[Tool] = [
-                tools_registry[tool_name](model_provider=provider) for tool_name in tool_names
+                get_tool_class(tool_name)(model_provider=provider) for tool_name in tool_names
             ]
         # self._tool_caller: ToolExecutor = ToolExecutor(self._tools)
 

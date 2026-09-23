@@ -22,6 +22,7 @@ __all__ = [
     "SequentialThinkingTool",
     "TaskDoneTool",
     "CKGTool",
+    "get_tool_class",
 ]
 
 tools_registry: dict[str, type[Tool]] = {
@@ -32,3 +33,15 @@ tools_registry: dict[str, type[Tool]] = {
     "task_done": TaskDoneTool,
     "ckg": CKGTool,
 }
+
+
+def get_tool_class(tool_name: str) -> type[Tool]:
+    """Look up a tool by the name used in the `tools` configuration field."""
+    tool_class = tools_registry.get(tool_name)
+    if tool_class is None:
+        available = ", ".join(sorted(tools_registry))
+        raise ValueError(
+            f"Unknown tool '{tool_name}' in the agent configuration. Available tools: "
+            f"{available}. Run `trae-cli tools` for their descriptions."
+        )
+    return tool_class

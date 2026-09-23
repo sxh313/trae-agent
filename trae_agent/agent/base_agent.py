@@ -10,7 +10,7 @@ from typing import Union
 
 from trae_agent.agent.agent_basics import AgentExecution, AgentState, AgentStep, AgentStepState
 from trae_agent.agent.docker_manager import DockerManager
-from trae_agent.tools import tools_registry
+from trae_agent.tools import get_tool_class
 from trae_agent.tools.base import Tool, ToolCall, ToolExecutor, ToolResult
 from trae_agent.tools.ckg.ckg_database import clear_older_ckg
 from trae_agent.tools.docker_tool_executor import DockerToolExecutor
@@ -40,7 +40,7 @@ class BaseAgent(ABC):
         self._initial_messages: list[LLMMessage] = []
         self._task: str = ""
         self._tools: list[Tool] = [
-            tools_registry[tool_name](model_provider=self._model_config.model_provider.provider)
+            get_tool_class(tool_name)(model_provider=self._model_config.model_provider.provider)
             for tool_name in agent_config.tools
         ]
         self.docker_keep = docker_keep

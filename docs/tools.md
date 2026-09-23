@@ -1,6 +1,6 @@
 # Tools
 
-Trae Agent provides five built-in tools for software engineering tasks:
+Trae Agent provides six built-in tools for software engineering tasks:
 
 ## str_replace_based_edit_tool
 
@@ -32,7 +32,7 @@ Execute shell commands in a persistent session.
 - Avoid commands with excessive output
 - Long-running commands should use `&` for background execution
 
-## sequential_thinking
+## sequentialthinking
 
 Structured problem-solving tool for complex analysis.
 
@@ -83,3 +83,31 @@ Precise JSON file editing using JSONPath expressions.
 - Validates JSON syntax and structure
 - Preserves formatting with pretty printing option
 - Detailed error messages for invalid operations
+
+## ckg
+
+Query the code knowledge graph (CKG) of a codebase: an index of its functions, classes and
+class methods, parsed with tree-sitter into a SQLite database.
+
+**Commands:**
+- `search_function` - Look up functions by identifier
+- `search_class` - Look up classes by identifier
+- `search_class_method` - Look up the methods of a class
+
+**Parameters:**
+- `command` - One of the three commands above (required)
+- `path` - Absolute or relative path of the codebase directory to query (required)
+- `identifier` - Function, class or method name to search for (required)
+- `print_body` - Also print the matched body; on by default, set `false` for locations only
+
+**Notes:**
+- The first query on a directory builds the index; later calls reuse it. The index is keyed by a
+  snapshot hash (`git status` when the directory is a repository, file metadata otherwise), so
+  editing the codebase makes the next call rebuild it.
+- Long results are truncated and marked with `<response clipped>`; multiple matches are returned
+  until that limit.
+- Supported file types are Python, Java, C/C++ (including headers) and JavaScript/TypeScript
+  (`.js`, `.jsx`, `.ts`, `.tsx`).
+- Known limitations, from `trae_agent/tools/ckg/ckg_database.py`: anonymous functions and arrow
+  functions in JavaScript/TypeScript are not in the graph, and a subdirectory of an already
+  indexed codebase gets its own fresh index rather than reusing the parent's.
