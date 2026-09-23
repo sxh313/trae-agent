@@ -76,6 +76,13 @@ models:
     model: claude-sonnet-4-20250514
     max_tokens: 4096
     temperature: 0.5
+    top_p: 1
+    top_k: 0
+    max_retries: 10
+    parallel_tool_calls: true
+
+lakeview:  # required while enable_lakeview is true
+  model: trae_agent_model
 ```
 
 **Note:** The `trae_config.yaml` file is ignored by git to protect your API keys.
