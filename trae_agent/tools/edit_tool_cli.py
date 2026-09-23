@@ -322,14 +322,14 @@ Notes for using the `str_replace` command:
     def read_file(self, path: Path):
         """Read the content of a file from a given path; raise a ToolError if an error occurs."""
         try:
-            return path.read_text()
+            return path.read_text(encoding="utf-8")
         except Exception as e:
             raise ToolError(f"Ran into {e} while trying to read {path}") from None
 
     def write_file(self, path: Path, file: str):
         """Write the content of a file to a given path; raise a ToolError if an error occurs."""
         try:
-            _ = path.write_text(file)
+            _ = path.write_text(file, encoding="utf-8")
         except Exception as e:
             raise ToolError(f"Ran into {e} while trying to write to {path}") from None
 

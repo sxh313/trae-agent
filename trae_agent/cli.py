@@ -281,7 +281,7 @@ def run(
             )
             sys.exit(1)
         try:
-            task = Path(file_path).read_text()
+            task = Path(file_path).read_text(encoding="utf-8")
         except FileNotFoundError:
             console.print(f"[red]Error: File not found: {file_path}[/red]")
             sys.exit(1)

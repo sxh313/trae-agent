@@ -45,7 +45,7 @@ class TestTextEditorTool(unittest.IsolatedAsyncioTestCase):
                 }
             )
         )
-        self.mock_write.assert_called_once_with("new content")
+        self.mock_write.assert_called_once_with("new content", encoding="utf-8")
         self.assertIn("created successfully", result.output)
 
     async def test_insert_line(self):
