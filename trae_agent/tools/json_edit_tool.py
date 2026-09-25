@@ -300,28 +300,34 @@ JSONPath syntax supported:
         match_count = len(matches)
 
         for match in reversed(matches):
-            parent_path = match.full_path.left
+            # match.context is the datum holding the value; full_path.left does not exist for paths
+            # that stop at a child of the root.
+            parent = match.context
+            if parent is None:
+                return ToolExecResult(
+                    error=(
+                        f"Cannot remove the document root at JSONPath '{json_path_str}'; "
+                        "remove a specific key or element instead."
+                    ),
+                    error_code=-1,
+                )
+
             target = match.path
+            parent_obj = parent.value
 
-            parent_matches = parent_path.find(data)
-            if not parent_matches:
-                continue
-
-            for parent_match in parent_matches:
-                parent_obj = parent_match.value
-                try:
-                    if isinstance(target, Fields):
-                        key_to_remove = target.fields[0]
-                        if isinstance(parent_obj, dict) and key_to_remove in parent_obj:
-                            del parent_obj[key_to_remove]
-                    elif isinstance(target, Index):
-                        index_to_remove = target.index
-                        if isinstance(parent_obj, list) and -len(
-                            parent_obj
-                        ) <= index_to_remove < len(parent_obj):
-                            parent_obj.pop(index_to_remove)
-                except (KeyError, IndexError):
-                    pass
+            try:
+                if isinstance(target, Fields):
+                    key_to_remove = target.fields[0]
+                    if isinstance(parent_obj, dict) and key_to_remove in parent_obj:
+                        del parent_obj[key_to_remove]
+                elif isinstance(target, Index):
+                    index_to_remove = target.index
+                    if isinstance(parent_obj, list) and -len(parent_obj) <= index_to_remove < len(
+                        parent_obj
+                    ):
+                        parent_obj.pop(index_to_remove)
+            except (KeyError, IndexError):
+                pass
 
         await self._save_json_file(file_path, data, pretty_print)
         return ToolExecResult(
