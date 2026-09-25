@@ -29,6 +29,19 @@ class ThoughtData:
     needs_more_thoughts: bool | None = None
 
 
+def _as_whole_number(value: object, error: str) -> int:
+    """Read an argument that this tool's schema declares as ``integer``.
+
+    JSON has a single number type, so a whole number can arrive as ``5.0``.
+    ``isinstance(5.0, int)`` is false, so checking for ``int`` alone rejects
+    arguments that the published schema describes as valid; the ``int()`` casts
+    further down then never see them. Fractional values are still refused.
+    """
+    if isinstance(value, int) or (isinstance(value, float) and value.is_integer()):
+        return int(value)
+    raise ValueError(error)
+
+
 class SequentialThinkingTool(Tool):
     """A tool for sequential thinking that helps break down complex problems.
 
@@ -165,11 +178,13 @@ You should:
         if "thought" not in arguments or not isinstance(arguments["thought"], str):
             raise ValueError("Invalid thought: must be a string")
 
-        if "thought_number" not in arguments or not isinstance(arguments["thought_number"], int):
-            raise ValueError("Invalid thought_number: must be a number")
+        thought_number = _as_whole_number(
+            arguments.get("thought_number"), "Invalid thought_number: must be a number"
+        )
 
-        if "total_thoughts" not in arguments or not isinstance(arguments["total_thoughts"], int):
-            raise ValueError("Invalid total_thoughts: must be a number")
+        total_thoughts = _as_whole_number(
+            arguments.get("total_thoughts"), "Invalid total_thoughts: must be a number"
+        )
 
         if "next_thought_needed" not in arguments or not isinstance(
             arguments["next_thought_needed"], bool
@@ -177,10 +192,10 @@ You should:
             raise ValueError("Invalid next_thought_needed: must be a boolean")
 
         # Validate minimum values
-        if arguments["thought_number"] < 1:
+        if thought_number < 1:
             raise ValueError("thought_number must be at least 1")
 
-        if arguments["total_thoughts"] < 1:
+        if total_thoughts < 1:
             raise ValueError("total_thoughts must be at least 1")
 
         # Validate optional revision fields
@@ -189,13 +204,11 @@ You should:
             and arguments["revises_thought"] is not None
             and arguments["revises_thought"] != 0
         ):
-            if (
-                not isinstance(arguments["revises_thought"], int)
-                or arguments["revises_thought"] < 1
-            ):
+            revises_thought = _as_whole_number(
+                arguments["revises_thought"], "revises_thought must be a positive integer"
+            )
+            if revises_thought < 1:
                 raise ValueError("revises_thought must be a positive integer")
-            else:
-                revises_thought = int(arguments["revises_thought"])
         else:
             revises_thought = None
 
@@ -204,20 +217,16 @@ You should:
             and arguments["branch_from_thought"] is not None
             and arguments["branch_from_thought"] != 0
         ):
-            if (
-                not isinstance(arguments["branch_from_thought"], int)
-                or arguments["branch_from_thought"] < 1
-            ):
+            branch_from_thought = _as_whole_number(
+                arguments["branch_from_thought"], "branch_from_thought must be a positive integer"
+            )
+            if branch_from_thought < 1:
                 raise ValueError("branch_from_thought must be a positive integer")
-            else:
-                branch_from_thought = int(arguments["branch_from_thought"])
         else:
             branch_from_thought = None
 
         # Extract and cast the validated values
         thought = str(arguments["thought"])
-        thought_number = int(arguments["thought_number"])  # Already validated as int
-        total_thoughts = int(arguments["total_thoughts"])  # Already validated as int
         next_thought_needed = bool(arguments["next_thought_needed"])  # Already validated as bool
 
         # Handle optional fields with proper type checking
