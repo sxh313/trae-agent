@@ -21,7 +21,7 @@ class MCPTool(Tool):
 
     @override
     def get_description(self) -> str:
-        return self.tool.description
+        return self.tool.description or ""
 
     @override
     def get_parameters(self) -> list[ToolParameter]:
@@ -33,11 +33,13 @@ class MCPTool(Tool):
             required = inputSchema.get("required", [])
             properties = inputSchema.get("properties", {})
             for name, prop in properties.items():
+                # `type` and `description` are optional in JSON Schema, but the provider
+                # request schema built from ToolParameter cannot carry an absent value.
                 tool_para = ToolParameter(
                     name=name,
-                    type=prop["type"],
+                    type=prop.get("type", "string"),
                     items=prop.get("items", None),
-                    description=prop["description"],
+                    description=prop.get("description", ""),
                     required=name in required,
                 )
                 parameters.append(tool_para)
