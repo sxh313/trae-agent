@@ -260,7 +260,9 @@ class CKGDatabase:
                                 parameters_node = function_definition_node.child_by_field_name(
                                     "parameters"
                                 )
-                                return_type_node = child.child_by_field_name("return_type")
+                                return_type_node = function_definition_node.child_by_field_name(
+                                    "return_type"
+                                )
 
                                 class_method_info = method_name_node.text.decode()
                                 if parameters_node:
