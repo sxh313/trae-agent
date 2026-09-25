@@ -259,7 +259,10 @@ class Config:
             lakeview_model_name = lakeview.get("model", None)
             if lakeview_model_name is None:
                 raise ConfigError("No model provided for lakeview")
-            lakeview_model = config_models[lakeview_model_name]
+            try:
+                lakeview_model = config_models[lakeview_model_name]
+            except KeyError as e:
+                raise ConfigError(f"Model {lakeview_model_name} not found") from e
             config.lakeview = LakeviewConfig(
                 model=lakeview_model,
             )
