@@ -7,6 +7,7 @@ from unittest.mock import patch
 from trae_agent.utils.config import Config, ModelConfig, ModelProvider
 from trae_agent.utils.legacy_config import LegacyConfig
 from trae_agent.utils.llm_clients.anthropic_client import AnthropicClient
+from trae_agent.utils.llm_clients.google_client import GoogleClient
 from trae_agent.utils.llm_clients.openai_client import OpenAIClient
 
 
@@ -137,6 +138,51 @@ class TestConfigBaseURL(unittest.TestCase):
             api_key="test-api-key", base_url="https://custom-anthropic.example.com"
         )
         self.assertEqual(client.base_url, "https://custom-anthropic.example.com")
+
+    @patch("trae_agent.utils.llm_clients.google_client.genai.Client")
+    def test_google_client_with_custom_base_url(self, mock_genai):
+        model_config = ModelConfig(
+            model="gemini-2.5-flash",
+            model_provider=ModelProvider(
+                api_key="test-api-key",
+                provider="google",
+                base_url="https://custom-google.example.com/api/v1",
+            ),
+            max_tokens=4096,
+            temperature=0.5,
+            top_p=1,
+            top_k=0,
+            parallel_tool_calls=False,
+            max_retries=10,
+        )
+
+        client = GoogleClient(model_config)
+
+        self.assertEqual(client.base_url, "https://custom-google.example.com/api/v1")
+        _, kwargs = mock_genai.call_args
+        http_options = kwargs.get("http_options")
+        self.assertIsNotNone(
+            http_options,
+            "genai.Client must be given http_options so requests reach the configured base_url",
+        )
+        self.assertEqual(http_options.base_url, "https://custom-google.example.com/api/v1")
+
+    @patch("trae_agent.utils.llm_clients.google_client.genai.Client")
+    def test_google_client_without_base_url_keeps_sdk_default(self, mock_genai):
+        model_config = ModelConfig(
+            model="gemini-2.5-flash",
+            model_provider=ModelProvider(api_key="test-api-key", provider="google"),
+            max_tokens=4096,
+            temperature=0.5,
+            top_p=1,
+            top_k=0,
+            parallel_tool_calls=False,
+            max_retries=10,
+        )
+
+        GoogleClient(model_config)
+
+        mock_genai.assert_called_once_with(api_key="test-api-key")
 
 
 class TestLakeviewConfig(unittest.TestCase):

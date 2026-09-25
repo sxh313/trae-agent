@@ -24,7 +24,13 @@ class GoogleClient(BaseLLMClient):
     def __init__(self, model_config: ModelConfig):
         super().__init__(model_config)
 
-        self.client = genai.Client(api_key=self.api_key)
+        if self.base_url:
+            self.client = genai.Client(
+                api_key=self.api_key,
+                http_options=types.HttpOptions(base_url=self.base_url),
+            )
+        else:
+            self.client = genai.Client(api_key=self.api_key)
         self.message_history: list[types.Content] = []
         self.system_instruction: str | None = None
 
