@@ -1,4 +1,5 @@
 import unittest
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from trae_agent.utils.mcp_client import MCPClient, MCPServerConfig, MCPServerStatus
@@ -57,6 +58,52 @@ class TestMCPClient(unittest.IsolatedAsyncioTestCase):
         for _, tools in mcp_servers_dict.items():
             all_tools.extend(tools)
         self.assertTrue(all(tool.__class__.__name__ == "MCPTool" for tool in all_tools))
+
+    def _stub_stdio_transport(self, mock_stdio_client, mock_client_session):
+        """Make the patched stdio transport and client session usable as async context managers."""
+        mock_stdio_client.return_value.__aenter__.return_value = (AsyncMock(), AsyncMock())
+        session = AsyncMock()
+        session.list_tools = AsyncMock(return_value=SimpleNamespace(tools=[]))
+        mock_client_session.return_value.__aenter__.return_value = session
+        return session
+
+    @patch("trae_agent.utils.mcp_client.stdio_client")
+    @patch("trae_agent.utils.mcp_client.ClientSession")
+    async def test_connect_and_discover_stdio_omitting_args(
+        self, mock_client_session, mock_stdio_client
+    ):
+        # MCPServerConfig declares `args` optional with a None default, so a config that
+        # only names a command must still connect instead of being dropped.
+        config = MCPServerConfig(command="npx")
+        self._stub_stdio_transport(mock_stdio_client, mock_client_session)
+
+        tools = []
+        await self.client.connect_and_discover(
+            "no_args_server", config, tools, model_provider="anthropic"
+        )
+
+        params = mock_stdio_client.call_args[0][0]
+        self.assertEqual(params.args, [])
+        self.assertEqual(params.command, "npx")
+        self.assertEqual(
+            self.client.get_mcp_server_status("no_args_server"), MCPServerStatus.CONNECTED
+        )
+
+    @patch("trae_agent.utils.mcp_client.stdio_client")
+    @patch("trae_agent.utils.mcp_client.ClientSession")
+    async def test_connect_and_discover_stdio_passes_configured_args(
+        self, mock_client_session, mock_stdio_client
+    ):
+        config = MCPServerConfig(command="npx", args=["@playwright/mcp@0.0.27"])
+        self._stub_stdio_transport(mock_stdio_client, mock_client_session)
+
+        tools = []
+        await self.client.connect_and_discover(
+            "args_server", config, tools, model_provider="anthropic"
+        )
+
+        params = mock_stdio_client.call_args[0][0]
+        self.assertEqual(params.args, ["@playwright/mcp@0.0.27"])
 
     async def test_connect_and_discover_invalid_config(self):
         config = MCPServerConfig()
