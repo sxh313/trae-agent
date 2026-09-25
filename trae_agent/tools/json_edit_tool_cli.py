@@ -182,10 +182,6 @@ class JSONEditTool(Tool):
                 error=f"No matches found for JSONPath: {json_path_str}", error_code=-1
             )
         match_count = len(matches)
-        jsonpath_expr.filter(
-            lambda v: True, data
-        )  # This is a conceptual way to remove, actual removal is more complex
-        # A more robust remove logic:
         for match in reversed(matches):
             parent_path = match.full_path.left
             target = match.path
